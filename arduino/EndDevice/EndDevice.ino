@@ -1,46 +1,48 @@
-/*
-  LoRa Duplex communication
+// include libraries
+#include <SPI.h>
 
-  Sends a message every half second, and polls continually
-  for new incoming messages. Implements a one-byte addressing scheme,
-  with 0xFF as the broadcast address.
-
-  Uses readString() from Stream class to read payload. The Stream class'
-  timeout may affect other functuons, like the radio's callback. For an
-
-  created 28 April 2017
-  by Tom Igoe
-*/
-#include <SPI.h>              // include libraries
 #include <LoRa.h>
+
 #include <EEPROM.h>
 
+// define some parameters
 #define HIGH_BAND 868E6
 #define LOW_BAND 169E6
 #define TX_POWER 20
 
-const int csPin = 15;                // LoRa radio chip select
-const int resetPin = 0;              // LoRa radio reset
-const int irqPin = 4;                // change for your board; must be a hardware interrupt pin
+// LoRa radio chip select
+const int csPin = 15;
+// LoRa radio reset
+const int resetPin = 0;
+// must be a hardware interrupt pin
+const int irqPin = 4;
 
 const int spreadingFactor = 10;
 const int txPower = 20;
-const byte syncWord = 0x12;          // LoRa sync word, see LoRa-master api
-const int codingRateDenominator = 2; // LoRa coding rate, see LoRa-master api
+// LoRa sync word, see LoRa-master api
+const byte syncWord = 0x12;
+// LoRa coding rate, see LoRa-master api
+const int codingRateDenominator = 2;
 
-String outgoing;              // outgoing message
-byte msgCount = 0;            // count of outgoing messages
-byte localAddress = 0x00;     // address of this device, will be read from EEPROM later
-byte destination = 0xFF;      // destination to send to
-long lastSendTime = 0;        // last send time
-int interval = 2000;          // interval between sends
-
+// outgoing message
+String outgoing;
+// count of outgoing messages
+byte msgCount = 0;
+// address of this device, will be read from EEPROM later
+byte localAddress = 0x00;
+// destination to send to
+byte destination = 0xFF;
+// last send time
+long lastSendTime = 0;
+// interval between sends
+int interval = 2000;
 
 void setup() {
-  Serial.begin(115200);                   // initialize serial
+  // initialize serial
+  Serial.begin(115200);
   while (!Serial);
-  
-  delay(500);
+
+  delay(100);
   Serial.println();
   Serial.println("--------START OF PROGRAM--------");
 
@@ -50,15 +52,17 @@ void setup() {
   Serial.println("Local address: " + String(localAddress, HEX));
   EEPROM.end();
 
-  // override the default CS, reset, and IRQ pins (optional)
-  LoRa.setPins(csPin, resetPin, irqPin);// set CS, reset, IRQ pin
+  // override the default CS, reset, and IRQ pins
+  LoRa.setPins(csPin, resetPin, irqPin);
 
-  if (!LoRa.begin(LOW_BAND)) {             // initialize ratio at 915 MHz
+  // initialize LoRa at selected band
+  if (!LoRa.begin(LOW_BAND)) {
     Serial.println("LoRa init failed. Check your connections.");
-    while (true);                       // if failed, do nothing
+    // if failed, do nothing
+    while (true);
   }
-  
-  // initialize LoRa transceiver
+
+  // initialize LoRa transceiver with the chosen parameters
   LoRa.setSpreadingFactor(spreadingFactor);
   LoRa.setTxPower(txPower, PA_OUTPUT_PA_BOOST_PIN);
   //LoRa.setSyncWord(syncWord);
@@ -69,11 +73,16 @@ void setup() {
 
 void loop() {
   if (millis() - lastSendTime > interval) {
-    String message = "HeLoRa World!";   // send a message
+    // send a message
+    String message = "HeLoRa World!";
     sendMessage(message);
     Serial.println("Sending " + message);
-    lastSendTime = millis();            // timestamp the message
-    interval = random(2000) + 1000;    // 2-3 seconds
+
+    // timestamp the message
+    lastSendTime = millis();
+
+    // 2-3 seconds
+    interval = random(2000) + 1000;
   }
 
   // parse for a packet, and call onReceive with the result:
@@ -81,40 +90,55 @@ void loop() {
 }
 
 void sendMessage(String outgoing) {
-  LoRa.beginPacket();                   // start packet
-  LoRa.write(destination);              // add destination address
-  LoRa.write(localAddress);             // add sender address
-  LoRa.write(msgCount);                 // add message ID
-  LoRa.write(outgoing.length());        // add payload length
-  LoRa.print(outgoing);                 // add payload
-  LoRa.endPacket();                     // finish packet and send it
-  msgCount++;                           // increment message ID
+  // start packet
+  LoRa.beginPacket();
+  // add destination address
+  LoRa.write(destination);
+  // add sender address
+  LoRa.write(localAddress);
+  // add message ID
+  LoRa.write(msgCount);
+  // add payload length
+  LoRa.write(outgoing.length());
+  // add payload
+  LoRa.print(outgoing);
+  // finish packet and send it
+  LoRa.endPacket();
+  // increment message ID
+  msgCount++;
 }
 
 void onReceive(int packetSize) {
-  if (packetSize == 0) return;          // if there's no packet, return
+  // if there's no packet, return
+  if (packetSize == 0) return;
 
-  // read packet header bytes:
-  int recipient = LoRa.read();          // recipient address
-  byte sender = LoRa.read();            // sender address
-  byte incomingMsgId = LoRa.read();     // incoming msg ID
-  byte incomingLength = LoRa.read();    // incoming msg length
+  // read packet header bytes, start with recipient address
+  int recipient = LoRa.read();
+  // sender address
+  byte sender = LoRa.read();
+  // incoming msg ID
+  byte incomingMsgId = LoRa.read();
+  // incoming msg length
+  byte incomingLength = LoRa.read();
 
   String incoming = "";
 
   while (LoRa.available()) {
-    incoming += (char)LoRa.read();
+    incoming += (char) LoRa.read();
   }
 
-  if (incomingLength != incoming.length()) {   // check length for error
+  // check length for error
+  if (incomingLength != incoming.length()) {
     Serial.println("error: message length does not match length");
-    return;                             // skip rest of function
+    // skip rest of function
+    return;
   }
 
   // if the recipient isn't this device or broadcast,
   if (recipient != localAddress && recipient != 0xFF) {
     Serial.println("This message is not for me.");
-    return;                             // skip rest of function
+    // skip rest of function
+    return;
   }
 
   // if message is for this device, or broadcast, print details:
