@@ -48,6 +48,9 @@ void setup() {
   Serial.println();
   Serial.println("--------START OF PROGRAM--------");
 
+  // initialize digital pin LED_BUILTIN as an output.
+  pinMode(LED_BUILTIN, OUTPUT);
+  
   // read eeprom to get ID:
   EEPROM.begin(512);
   localAddress = EEPROM.read(0);
@@ -65,6 +68,8 @@ void setup() {
   }
 
   Serial.println("isEndDevice: " + isEndDevice);
+
+  strobeLEDs();
 
   // override the default CS, reset, and IRQ pins
   LoRa.setPins(csPin, resetPin, irqPin);
@@ -86,6 +91,7 @@ void setup() {
   Serial.print("SF: " + String(spreadingFactor) + ", BW: ");
   Serial.println(BANDWIDTH);
   Serial.println("LoRa init succeeded.");
+  Serial.println("--------------------------------");
 }
 
 void loop() {
@@ -112,7 +118,7 @@ void loop() {
       char incomingByte = Serial.read();
       incomingMsg[index] = incomingByte;
       index++;
-      delay(1);
+      delay(5);
     }
     incomingMsg[index] = '\0';
     if(gotMsg){
@@ -125,6 +131,27 @@ void loop() {
   onReceive(LoRa.parsePacket());
 }
 
+void strobeLEDs(){
+  if(isEndDevice){
+    for(int i = 0; i < 10; i++){
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(50);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(50);
+    }
+  } else {
+    for(int i = 0; i < 5; i++){
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(50);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(50);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(50);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(100);
+    }
+  }
+}
 void sendMessage(byte dst, byte src, byte count, String msg) {
   // start packet
   LoRa.beginPacket();
@@ -153,7 +180,7 @@ void onReceive(int packetSize) {
   // incoming msg ID
   byte count = LoRa.read();
   // incoming msg length
-  byte msglength = LoRa.read();
+  byte msgLength = LoRa.read();
 
   String msg = "";
 
@@ -162,7 +189,7 @@ void onReceive(int packetSize) {
   }
 
   // check length for error
-  if (msglength != msg.length()) {
+  if (msgLength != msg.length()) {
     Serial.println("error: message length does not match length");
     // skip rest of function
     return;
@@ -182,11 +209,11 @@ void onReceive(int packetSize) {
   if (dst == localAddress) {
     Serial.print("src: 0x" + String(src, HEX));
     Serial.print(" dst: 0x" + String(dst, HEX));
-    Serial.print(" msgCount: " + String(count));
-    Serial.print(" msgLength: " + String(msglength));
-    Serial.print(" msg: " + msg);
+    Serial.print(" count: " + String(count));
+    Serial.print(" length: " + String(msgLength));
     Serial.print(" rssi: " + String(LoRa.packetRssi()));
-    Serial.print(" snr: " + String(LoRa.packetSnr()));
-    Serial.println();
+    Serial.println(" snr: " + String(LoRa.packetSnr()));
+    Serial.print("msg: " + msg);
+    Serial.println("--------------------------------");
   }
 }
