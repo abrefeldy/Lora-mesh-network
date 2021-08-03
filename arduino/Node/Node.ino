@@ -51,7 +51,7 @@ void setup() {
   // read eeprom to get ID:
   EEPROM.begin(512);
   localAddress = EEPROM.read(0);
-  Serial.println("Local address: " + String(localAddress, HEX));
+  Serial.println("Local address: 0x" + String(localAddress, HEX));
   EEPROM.end();
 
   // check if this node is end device
@@ -63,6 +63,8 @@ void setup() {
       destination = 0x01;
     }
   }
+
+  Serial.println("isEndDevice: " + isEndDevice); 
 
   // override the default CS, reset, and IRQ pins
   LoRa.setPins(csPin, resetPin, irqPin);
@@ -81,6 +83,8 @@ void setup() {
   //LoRa.setSyncWord(syncWord);
   //LoRa.enableCrc();
   //LoRa.setCodingRate4(codingRateDenominator);
+  Serial.print("SF: " + String(spreadingFactor) + ", BW: ");
+  Serial.println(BANDWIDTH);
   Serial.println("LoRa init succeeded.");
 }
 
