@@ -217,6 +217,7 @@ void onReceive(int packetSize) {
     // If Ack
     if (count == AckInd) {
       Serial.println("ACK (" + msg + ")");
+      Serial.println("--------------------------------");
       return;
     }
     
