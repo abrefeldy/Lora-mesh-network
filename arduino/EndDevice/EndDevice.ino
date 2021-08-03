@@ -29,7 +29,7 @@ byte msgCount = 0;
 // address of this device, will be read from EEPROM later
 byte localAddress = 0x00;
 // destination to send to
-byte destination = 0xFF;
+byte destination = 0x01;
 // last send time
 long lastSendTime = 0;
 // interval between sends
@@ -80,7 +80,7 @@ void loop() {
     lastSendTime = millis();
 
     // 2-3 seconds
-    interval = random(2000) + 1000;
+    interval = random(2000) + 5000;
   }
 
   // parse for a packet, and call onReceive with the result:

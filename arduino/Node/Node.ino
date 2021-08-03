@@ -122,7 +122,7 @@ void onReceive(int packetSize) {
   if (dst != localAddress || dst == 0xff) {
     Serial.println("This message is not for me.");
     Serial.println("Forwarding the message.");
-    sendMessage(dst, src, count, msg);
+    sendMessage(dst, localAddress, count, msg);
     if(dst != 0xff){
       return;
     }
