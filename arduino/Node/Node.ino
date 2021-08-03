@@ -122,9 +122,9 @@ void loop() {
       index++;
       delay(5);
     }
-    incomingMsg[index] = '\0';
+    incomingMsg[index - 1] = '\0';
     if(gotMsg){
-      Serial.println((String)msgCount + " - Sent Message:" + (String)incomingMsg);
+      Serial.println("Sent Message (" + (String)msgCount + "): " + (String)incomingMsg);
       sendMessage(destination, localAddress, msgCount, incomingMsg);
       msgCount++;
     }
@@ -216,7 +216,7 @@ void onReceive(int packetSize) {
   if (dst == localAddress) {
     // If Ack
     if (count == AckInd) {
-      Serial.println(msg);
+      Serial.println("ACK (" + msg + ")");
       return;
     }
     
@@ -227,12 +227,12 @@ void onReceive(int packetSize) {
     Serial.print(" length: " + String(msgLength));
     Serial.print(" rssi: " + String(LoRa.packetRssi()));
     Serial.println(" snr: " + String(LoRa.packetSnr()));
-    Serial.print("msg: " + msg);
+    Serial.println("msg: " + msg);
     Serial.println("--------------------------------");
 
     //Send Ack
     if (count != AckInd && dst != 0xff) {
-      sendMessage(destination, localAddress, AckInd, "ACK: " +  String(count));
+      sendMessage(destination, localAddress, AckInd, String(count));
     }
   }
 }
