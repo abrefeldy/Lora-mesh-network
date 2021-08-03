@@ -1,8 +1,6 @@
 // include libraries
 #include <SPI.h>
-
 #include <LoRa.h>
-
 #include <EEPROM.h>
 
 // define some parameters
