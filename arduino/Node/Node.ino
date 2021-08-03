@@ -3,7 +3,7 @@
 #include <LoRa.h>
 #include <EEPROM.h>
 
-// define some parameters123
+// define some parameters
 #define HIGH_BAND 868E6
 #define LOW_BAND 169E6
 #define TX_POWER 20
