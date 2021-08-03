@@ -38,6 +38,8 @@ byte destination = 0xFF;
 long lastSendTime = 0;
 // interval between sends
 int interval = 2000;
+// Ack indication
+const int AckInd = 255;
 
 void setup() {
   // initialize serial
@@ -122,6 +124,7 @@ void loop() {
     }
     incomingMsg[index] = '\0';
     if(gotMsg){
+      Serial.println((String)msgCount + " - Sent Message:" + (String)incomingMsg);
       sendMessage(destination, localAddress, msgCount, incomingMsg);
       msgCount++;
     }
@@ -142,13 +145,17 @@ void strobeLEDs(){
   } else {
     for(int i = 0; i < 5; i++){
       digitalWrite(LED_BUILTIN, LOW);
-      delay(50);
+      delay(40);
       digitalWrite(LED_BUILTIN, HIGH);
-      delay(50);
+      delay(40);
       digitalWrite(LED_BUILTIN, LOW);
-      delay(50);
+      delay(40);
       digitalWrite(LED_BUILTIN, HIGH);
-      delay(100);
+      delay(40);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(40);
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(200);
     }
   }
 }
@@ -207,6 +214,13 @@ void onReceive(int packetSize) {
 
   // if message is for this device, or broadcast, print details:
   if (dst == localAddress) {
+    // If Ack
+    if (count == AckInd) {
+      Serial.println(msg);
+      return;
+    }
+    
+    // Regular Message
     Serial.print("src: 0x" + String(src, HEX));
     Serial.print(" dst: 0x" + String(dst, HEX));
     Serial.print(" count: " + String(count));
@@ -215,5 +229,10 @@ void onReceive(int packetSize) {
     Serial.println(" snr: " + String(LoRa.packetSnr()));
     Serial.print("msg: " + msg);
     Serial.println("--------------------------------");
+
+    //Send Ack
+    if (count != AckInd && dst != 0xff) {
+      sendMessage(destination, localAddress, AckInd, "ACK: " +  String(count));
+    }
   }
 }
