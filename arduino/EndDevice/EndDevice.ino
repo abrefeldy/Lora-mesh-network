@@ -7,6 +7,7 @@
 #define HIGH_BAND 868E6
 #define LOW_BAND 169E6
 #define TX_POWER 20
+#define BANDWIDTH 125E3
 
 // LoRa radio chip select
 const int csPin = 15;
@@ -15,7 +16,7 @@ const int resetPin = 0;
 // must be a hardware interrupt pin
 const int irqPin = 4;
 
-const int spreadingFactor = 10;
+const int spreadingFactor = 12;
 const int txPower = 20;
 // LoRa sync word, see LoRa-master api
 const byte syncWord = 0x12;
@@ -63,6 +64,7 @@ void setup() {
   // initialize LoRa transceiver with the chosen parameters
   LoRa.setSpreadingFactor(spreadingFactor);
   LoRa.setTxPower(txPower, PA_OUTPUT_PA_BOOST_PIN);
+  LoRa.setSignalBandwidth(BANDWIDTH);
   //LoRa.setSyncWord(syncWord);
   //LoRa.enableCrc();
   //LoRa.setCodingRate4(codingRateDenominator);
@@ -127,7 +129,10 @@ void onReceive(int packetSize) {
 
   // check length for error
   if (incomingLength != incoming.length()) {
-    Serial.println("error: message length does not match length");
+    Serial.println("err
+    
+    qwer124
+    or: message length does not match length");
     // skip rest of function
     return;
   }

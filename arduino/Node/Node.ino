@@ -7,21 +7,25 @@
 #define HIGH_BAND 868E6
 #define LOW_BAND 169E6
 #define TX_POWER 20
+#define BANDWIDTH 125E3
 
+
+// Is the device an end device or node
+bool isEndDevice = false;
 // LoRa radio chip select
 const int csPin = 15;
 // LoRa radio reset
 const int resetPin = 0;
 // must be a hardware interrupt pin
 const int irqPin = 4;
-
-const int spreadingFactor = 10;
+// set spreading factor
+const int spreadingFactor = 12;
+// set LoRa Tx power
 const int txPower = 20;
 // LoRa sync word, see LoRa-master api
 const byte syncWord = 0x12;
 // LoRa coding rate, see LoRa-master api
 const int codingRateDenominator = 2;
-
 // outgoing message
 String outgoing;
 // count of outgoing messages
@@ -50,6 +54,16 @@ void setup() {
   Serial.println("Local address: " + String(localAddress, HEX));
   EEPROM.end();
 
+  // check if this node is end device
+  if(localAddress == 0x01 || localAddress == 0x02){
+    isEndDevice = true;
+    if(localAddress == 0x01){
+      destination = 0x02;
+    } else {
+      destination = 0x01;
+    }
+  }
+
   // override the default CS, reset, and IRQ pins
   LoRa.setPins(csPin, resetPin, irqPin);
 
@@ -63,6 +77,7 @@ void setup() {
   // initialize LoRa transceiver with the chosen parameters
   LoRa.setSpreadingFactor(spreadingFactor);
   LoRa.setTxPower(txPower, PA_OUTPUT_PA_BOOST_PIN);
+  LoRa.setSignalBandwidth(BANDWIDTH);
   //LoRa.setSyncWord(syncWord);
   //LoRa.enableCrc();
   //LoRa.setCodingRate4(codingRateDenominator);
@@ -70,7 +85,21 @@ void setup() {
 }
 
 void loop() {
+  // if end deivce, send message:
+  if (isEndDevice && millis() - lastSendTime > interval) {
+    // send a message
+    String message = "HeLoRa World!";
+    sendMessage(destination, localAddress, msgCount, message);
+    msgCount++;
+    Serial.println("Sending " + message);
 
+    // timestamp the message
+    lastSendTime = millis();
+
+    // 2-3 seconds
+    interval = random(2000) + 10000;
+  }
+  
   // parse for a packet, and call onReceive with the result:
   onReceive(LoRa.parsePacket());
 }
@@ -119,7 +148,7 @@ void onReceive(int packetSize) {
   }
 
   // if the recipient isn't this device or broadcast,
-  if (dst != localAddress || dst == 0xff) {
+  if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
     Serial.println("This message is not for me.");
     Serial.println("Forwarding the message.");
     sendMessage(dst, localAddress, count, msg);
@@ -129,12 +158,12 @@ void onReceive(int packetSize) {
   }
 
   // if message is for this device, or broadcast, print details:
-  Serial.println("Received from: 0x" + String(src, HEX));
-  Serial.println("Sent to: 0x" + String(dst, HEX));
-  Serial.println("Message ID: " + String(count));
-  Serial.println("Message length: " + String(msglength));
-  Serial.println("Message: " + msg);
-  Serial.println("RSSI: " + String(LoRa.packetRssi()));
-  Serial.println("Snr: " + String(LoRa.packetSnr()));
+  Serial.println("src: 0x" + String(src, HEX));
+  Serial.println("dst: 0x" + String(dst, HEX));
+  Serial.println("msgCount: " + String(count));
+  Serial.println("msgLength: " + String(msglength));
+  Serial.println("msg: " + msg);
+  Serial.println("rssi: " + String(LoRa.packetRssi()));
+  Serial.println("snr: " + String(LoRa.packetSnr()));
   Serial.println();
 }
