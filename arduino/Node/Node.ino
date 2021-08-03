@@ -41,7 +41,7 @@ int interval = 2000;
 
 void setup() {
   // initialize serial
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial);
 
   delay(100);
@@ -55,16 +55,16 @@ void setup() {
   EEPROM.end();
 
   // check if this node is end device
-  if(localAddress == 0x01 || localAddress == 0x02){
+  if (localAddress == 0x01 || localAddress == 0x02) {
     isEndDevice = true;
-    if(localAddress == 0x01){
+    if (localAddress == 0x01) {
       destination = 0x02;
     } else {
       destination = 0x01;
     }
   }
 
-  Serial.println("isEndDevice: " + isEndDevice); 
+  Serial.println("isEndDevice: " + isEndDevice);
 
   // override the default CS, reset, and IRQ pins
   LoRa.setPins(csPin, resetPin, irqPin);
@@ -90,7 +90,7 @@ void setup() {
 
 void loop() {
   // if end deivce, send message:
-  if (isEndDevice && millis() - lastSendTime > interval) {
+  /*if (isEndDevice && millis() - lastSendTime > interval) {
     // send a message
     String message = "HeLoRa World!";
     sendMessage(destination, localAddress, msgCount, message);
@@ -102,8 +102,25 @@ void loop() {
 
     // 2-3 seconds
     interval = random(2000) + 10000;
+  }*/
+
+  if(isEndDevice){
+    char incomingMsg[100];
+    int index = 0;
+    bool gotMsg = Serial.available() > 0;
+    while(Serial.available() > 0){
+      char incomingByte = Serial.read();
+      incomingMsg[index] = incomingByte;
+      index++;
+      delay(1);
+    }
+    incomingMsg[index] = '\0';
+    if(gotMsg){
+      sendMessage(destination, localAddress, msgCount, incomingMsg);
+      msgCount++;
+    }
   }
-  
+
   // parse for a packet, and call onReceive with the result:
   onReceive(LoRa.parsePacket());
 }
@@ -151,23 +168,25 @@ void onReceive(int packetSize) {
     return;
   }
 
-  // if the recipient isn't this device or broadcast,
+  // if we are nodes and we are not the destination of the msg, forward it
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
     Serial.println("This message is not for me.");
     Serial.println("Forwarding the message.");
     sendMessage(dst, localAddress, count, msg);
-    if(dst != 0xff){
+    if (dst != 0xff) {
       return;
     }
   }
 
   // if message is for this device, or broadcast, print details:
-  Serial.println("src: 0x" + String(src, HEX));
-  Serial.println("dst: 0x" + String(dst, HEX));
-  Serial.println("msgCount: " + String(count));
-  Serial.println("msgLength: " + String(msglength));
-  Serial.println("msg: " + msg);
-  Serial.println("rssi: " + String(LoRa.packetRssi()));
-  Serial.println("snr: " + String(LoRa.packetSnr()));
-  Serial.println();
+  if (dst == localAddress) {
+    Serial.print("src: 0x" + String(src, HEX));
+    Serial.print(" dst: 0x" + String(dst, HEX));
+    Serial.print(" msgCount: " + String(count));
+    Serial.print(" msgLength: " + String(msglength));
+    Serial.print(" msg: " + msg);
+    Serial.print(" rssi: " + String(LoRa.packetRssi()));
+    Serial.print(" snr: " + String(LoRa.packetSnr()));
+    Serial.println();
+  }
 }
