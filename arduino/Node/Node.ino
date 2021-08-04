@@ -191,15 +191,20 @@ void onReceive(int packetSize) {
 
   // if we are nodes and we are not the destination of the msg, forward it
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
+      Serial.println("Is node" );
     if (count == AckInd) {
+      Serial.println("count == AckInd");
       char* msgChar;
+      Serial.println("char* msgChar;");
       msg.toCharArray(msgChar, msg.length());
+      Serial.println("msg.toCharArray(msgChar, msg.length());");
       Serial.println("ACK MECHANISM " + String(src) + ", " + String(atoi(msgChar)));
       if (!acks[src - 1][atoi(msgChar)]) {
         Serial.println("ACK MECHANISM didn't see this ack");
         acks[src - 1][atoi(msgChar)] = true;
         Serial.println("ACK (count = " + String(msgChar) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
         sendMessage(dst, src, AckInd, String(count) + " >ACK> from node");
+        Serial.println("sendMessage(dst, src, AckInd, String(count) + " >ACK> from node");");
         return;
       } else {
         Serial.println("Already seen this ACK (" + String(msgChar) + "), not forwarding");
@@ -212,8 +217,10 @@ void onReceive(int packetSize) {
       Serial.println("This message is not for me (count = " + String(count) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")" );
       Serial.println("Forwarding the message.");
       sendMessage(dst, src, count, msg + " >MSG> from node");
+      Serial.println("sendMessage(dst, src, count, msg +  >MSG> from node);");
       // Add the massage to the recieved ones
       counts[src - 1][count] = true;
+      Serial.println("counts[src - 1][count] = true;");
       if (dst != 0xff) {
         return;
       }
@@ -225,6 +232,7 @@ void onReceive(int packetSize) {
 
   // if message is for this device, or broadcast, print details:
   if (dst == localAddress) {
+    Serial.println("if (dst == localAddress) {");
     // If Ack
     if (count == AckInd) {
       Serial.println("ACK (" + msg + ")");
