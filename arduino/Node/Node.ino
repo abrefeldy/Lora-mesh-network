@@ -44,7 +44,7 @@ bool acks[2][255] = {false};
 
 void setup() {
   // initialize serial
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
 
   delay(100);
