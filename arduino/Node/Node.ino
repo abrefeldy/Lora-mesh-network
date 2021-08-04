@@ -191,9 +191,9 @@ void onReceive(int packetSize) {
 
   // if we are nodes and we are not the destination of the msg, forward it
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
-    char* msgChar;
-    msg.toCharArray(msgChar, msg.length());
     if (count == AckInd) {
+      char* msgChar;
+      msg.toCharArray(msgChar, msg.length());
       Serial.println("ACK MECHANISM " + String(src) + ", " + String(atoi(msgChar)));
       if (!acks[src - 1][atoi(msgChar)]) {
         Serial.println("ACK MECHANISM didn't see this ack");
