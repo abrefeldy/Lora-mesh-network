@@ -27,7 +27,7 @@ const byte syncWord = 0x12;
 // LoRa coding rate, see LoRa-master api
 const int codingRateDenominator = 2;
 // Ack indication
-const int AckInd = 100;
+const int AckInd = 255;
 // outgoing message
 String outgoing;
 // count of outgoing messages
@@ -194,7 +194,7 @@ void onReceive(int packetSize) {
       Serial.println("Is node" );
     if (count == AckInd) {
       Serial.println("count == AckInd");
-      char* msgChar;
+      char msgChar[8];
       Serial.println("char* msgChar;");
       msg.toCharArray(msgChar, msg.length());
       Serial.println("msg.toCharArray(msgChar, msg.length());");
@@ -204,7 +204,7 @@ void onReceive(int packetSize) {
         acks[src - 1][atoi(msgChar)] = true;
         Serial.println("ACK (count = " + String(msgChar) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
         sendMessage(dst, src, AckInd, String(count) + " >ACK> from node");
-        Serial.println("sendMessage(dst, src, AckInd, String(count) + " >ACK> from node");");
+        Serial.println("sendMessage(dst, src, AckInd, String(count) +  >ACK> from node");
         return;
       } else {
         Serial.println("Already seen this ACK (" + String(msgChar) + "), not forwarding");
