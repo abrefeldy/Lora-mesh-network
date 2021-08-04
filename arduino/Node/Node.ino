@@ -192,16 +192,15 @@ void onReceive(int packetSize) {
   // if we are nodes and we are not the destination of the msg, forward it
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
     if (count == AckInd) {
-      char msgChar[8];
-      msg.toCharArray(msgChar, msg.length());
-      Serial.println("ACK MECHANISM " + String(src) + ", " + String(atoi(msgChar)));
-      if (!acks[src - 1][atoi(msgChar)]) {
+      Serial.println("ACK MECHANISM." + msg);
+      Serial.println("ACK MECHANISM. Source =  " + String(src) + ", Count = " + msg.charAt(0) + ", acks[src-1][atoi(msgChar))=" + acks[src - 1][msg.charAt(0)]);
+      if (!acks[src - 1][msg.charAt(0)]) {
         Serial.println("ACK MECHANISM didn't see this ack");
-        acks[src - 1][atoi(msgChar)] = true;
-        Serial.println("ACK (count = " + String(msgChar) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
-        sendMessage(dst, src, AckInd, String(count) + " >ACK> from node");
+        acks[src - 1][msg.charAt(0)] = true;
+        Serial.println("ACK (count = " + String(msg.charAt(0)) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
+        sendMessage(dst, src, AckInd, String(msg.charAt(0)) + " >ACK> from node");
       } else {
-        Serial.println("Already seen this ACK (" + String(msgChar) + "), not forwarding");
+        Serial.println("Already seen this ACK (" + String(msg.charAt(0)) + "), not forwarding");
       }
       return;
     }
@@ -213,7 +212,6 @@ void onReceive(int packetSize) {
       sendMessage(dst, src, count, msg + " >MSG> from node");
       // Add the massage to the recieved ones
       counts[src - 1][count] = true;
-      Serial.println("counts[src - 1][count] = true;");
       if (dst != 0xff) {
         return;
       }
@@ -225,10 +223,9 @@ void onReceive(int packetSize) {
 
   // if message is for this device, or broadcast, print details:
   if (dst == localAddress) {
-    Serial.println("if (dst == localAddress) {");
     // If Ack
     if (count == AckInd) {
-      Serial.println("ACK (" + msg + ")");
+      Serial.println("ACK - " + msg);
       Serial.println("--------------------------------");
       return;
     }
@@ -245,6 +242,7 @@ void onReceive(int packetSize) {
 
     //Send Ack
     if (isEndDevice && count != AckInd && dst != 0xff) {
+      Serial.println("Sending ACK, count: " + String(count));
       sendMessage(destination, localAddress, AckInd, String(count));
     }
   }
