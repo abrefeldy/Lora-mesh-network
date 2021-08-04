@@ -26,20 +26,21 @@ const int txPower = 20;
 const byte syncWord = 0x12;
 // LoRa coding rate, see LoRa-master api
 const int codingRateDenominator = 2;
+// Ack indication
+const int AckInd = 100;
 // outgoing message
 String outgoing;
 // count of outgoing messages
-byte msgCount = 0;
+byte localCount = 0;
 // address of this device, will be read from EEPROM later
 byte localAddress = 0x00;
 // destination to send to
 byte destination = 0xFF;
-// last send time
-long lastSendTime = 0;
-// interval between sends
-int interval = 2000;
-// Ack indication
-const int AckInd = 255;
+// table to store the received counts
+bool counts[2][255] = {false};
+// table to store the received ACKs
+bool acks[2][255] = {false};
+
 
 void setup() {
   // initialize serial
@@ -52,7 +53,7 @@ void setup() {
 
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
-  
+
   // read eeprom to get ID:
   EEPROM.begin(512);
   localAddress = EEPROM.read(0);
@@ -69,7 +70,7 @@ void setup() {
     }
   }
 
-  Serial.println("isEndDevice: " + isEndDevice);
+  Serial.println("isEndDevice: " + String(isEndDevice));
 
   strobeLEDs();
 
@@ -98,35 +99,21 @@ void setup() {
 
 void loop() {
   // if end deivce, send message:
-  /*if (isEndDevice && millis() - lastSendTime > interval) {
-    // send a message
-    String message = "HeLoRa World!";
-    sendMessage(destination, localAddress, msgCount, message);
-    msgCount++;
-    Serial.println("Sending " + message);
-
-    // timestamp the message
-    lastSendTime = millis();
-
-    // 2-3 seconds
-    interval = random(2000) + 10000;
-  }*/
-
-  if(isEndDevice){
+  if (isEndDevice) {
     char incomingMsg[100];
     int index = 0;
     bool gotMsg = Serial.available() > 0;
-    while(Serial.available() > 0){
+    while (Serial.available() > 0) {
       char incomingByte = Serial.read();
       incomingMsg[index] = incomingByte;
       index++;
       delay(5);
     }
     incomingMsg[index - 1] = '\0';
-    if(gotMsg){
-      Serial.println("Sent Message (" + (String)msgCount + "): " + (String)incomingMsg);
-      sendMessage(destination, localAddress, msgCount, incomingMsg);
-      msgCount++;
+    if (gotMsg) {
+      Serial.println("Sent Message (" + (String)localCount + "): " + (String)incomingMsg);
+      sendMessage(destination, localAddress, localCount, incomingMsg);
+      localCount++;
     }
   }
 
@@ -134,16 +121,16 @@ void loop() {
   onReceive(LoRa.parsePacket());
 }
 
-void strobeLEDs(){
-  if(isEndDevice){
-    for(int i = 0; i < 10; i++){
+void strobeLEDs() {
+  if (isEndDevice) {
+    for (int i = 0; i < 10; i++) {
       digitalWrite(LED_BUILTIN, LOW);
       delay(50);
       digitalWrite(LED_BUILTIN, HIGH);
       delay(50);
     }
   } else {
-    for(int i = 0; i < 5; i++){
+    for (int i = 0; i < 5; i++) {
       digitalWrite(LED_BUILTIN, LOW);
       delay(40);
       digitalWrite(LED_BUILTIN, HIGH);
@@ -204,10 +191,34 @@ void onReceive(int packetSize) {
 
   // if we are nodes and we are not the destination of the msg, forward it
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
-    Serial.println("This message is not for me.");
-    Serial.println("Forwarding the message.");
-    sendMessage(dst, localAddress, count, msg);
-    if (dst != 0xff) {
+    char* msgChar;
+    msg.toCharArray(msgChar, msgLength);
+    if (count == AckInd) {
+      Serial.println("ACK MECHANISM " + String(src) + ", " + String(atoi(msgChar)));
+      if (!acks[src - 1][atoi(msgChar)]) {
+        Serial.println("ACK MECHANISM didn't see this ack");
+        acks[src - 1][atoi(msgChar)] = true;
+        Serial.println("ACK (count = " + String(msgChar) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
+        sendMessage(dst, src, AckInd, String(count) + " >ACK> from node");
+        return;
+      } else {
+        Serial.println("Already seen this ACK (" + String(msgChar) + "), not forwarding");
+        return;
+      }
+    }
+
+    // check if the massege wasn't recieved yet & if the massage is not ack
+    if (!counts[src - 1][count]) {
+      Serial.println("This message is not for me (count = " + String(count) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")" );
+      Serial.println("Forwarding the message.");
+      sendMessage(dst, src, count, msg + " >MSG> from node");
+      // Add the massage to the recieved ones
+      counts[src - 1][count] = true;
+      if (dst != 0xff) {
+        return;
+      }
+    } else {
+      Serial.println("Already seen this message (" + String(count) + "), not forwarding");
       return;
     }
   }
@@ -220,7 +231,7 @@ void onReceive(int packetSize) {
       Serial.println("--------------------------------");
       return;
     }
-    
+
     // Regular Message
     Serial.print("src: 0x" + String(src, HEX));
     Serial.print(" dst: 0x" + String(dst, HEX));
@@ -232,7 +243,7 @@ void onReceive(int packetSize) {
     Serial.println("--------------------------------");
 
     //Send Ack
-    if (count != AckInd && dst != 0xff) {
+    if (isEndDevice && count != AckInd && dst != 0xff) {
       sendMessage(destination, localAddress, AckInd, String(count));
     }
   }
