@@ -193,7 +193,7 @@ void onReceive(int packetSize) {
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
     if (count == AckInd) {
       Serial.println("ACK MECHANISM." + msg);
-      Serial.println("ACK MECHANISM. Source =  " + String(src) + ", Count = " + msg.charAt(0) + ", acks[src-1][atoi(msgChar))=" + acks[src - 1][msg.charAt(0)]);
+      Serial.println("ACK MECHANISM. Source =  " + String(src) + ", Count = " + msg.charAt(0) + ", acks[src-1][msg.charAt(0)]=" + acks[src - 1][msg.charAt(0)]);
       if (!acks[src - 1][msg.charAt(0)]) {
         Serial.println("ACK MECHANISM didn't see this ack");
         acks[src - 1][msg.charAt(0)] = true;
