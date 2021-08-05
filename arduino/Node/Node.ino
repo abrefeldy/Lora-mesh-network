@@ -239,11 +239,11 @@ void onReceive(int packetSize) {
     Serial.print(" rssi: " + String(LoRa.packetRssi()));
     Serial.println(" snr: " + String(LoRa.packetSnr()));
     Serial.println("msg: " + msg);
-    Serial.println("--------------------------------");
 
     //Send Ack
     if (isEndDevice && count != AckInd && dst != 0xff) {
       Serial.println("Sending ACK, count: " + String(count));
+      Serial.println("--------------------------------");
       sendMessage(destination, localAddress, AckInd, String(count));
     }
   }
