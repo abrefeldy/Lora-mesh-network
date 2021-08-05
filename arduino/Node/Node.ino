@@ -41,7 +41,6 @@ bool counts[2][255] = {false};
 // table to store the received ACKs
 bool acks[2][255] = {false};
 
-
 void setup() {
   // initialize serial
   Serial.begin(115200);
@@ -198,7 +197,7 @@ void onReceive(int packetSize) {
         Serial.println("ACK MECHANISM didn't see this ack");
         acks[src - 1][msg.charAt(0)] = true;
         Serial.println("ACK (count = " + String(msg.charAt(0)) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
-        delay(random(200, 600)); // So acks won't be send in the same time
+        //delay(random(200, 600)); // So acks won't be send in the same time
         sendMessage(dst, src, AckInd, String(msg.charAt(0)) + " >ACK> from node");
       } else {
         Serial.println("Already seen this ACK (" + String(msg.charAt(0)) + "), not forwarding");
@@ -210,7 +209,7 @@ void onReceive(int packetSize) {
     if (!counts[src - 1][count]) {
       Serial.println("This message is not for me (count = " + String(count) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")" );
       Serial.println("Forwarding the message.");
-      delay(random(200, 600)); // So msgs won't be send in the same time
+      //delay(random(200, 600)); // So msgs won't be send in the same time
       sendMessage(dst, src, count, msg + " >MSG> from node");
       // Add the massage to the recieved ones
       counts[src - 1][count] = true;
