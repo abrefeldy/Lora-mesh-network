@@ -209,6 +209,7 @@ void onReceive(int packetSize) {
     if (!counts[src - 1][count]) {
       Serial.println("This message is not for me (count = " + String(count) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")" );
       Serial.println("Forwarding the message.");
+      delay(random(100, 300)); // So acks won't be send in the same time
       sendMessage(dst, src, count, msg + " >MSG> from node");
       // Add the massage to the recieved ones
       counts[src - 1][count] = true;
