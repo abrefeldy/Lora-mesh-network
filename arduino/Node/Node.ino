@@ -191,15 +191,18 @@ void onReceive(int packetSize) {
   // if we are nodes and we are not the destination of the msg, forward it
   if (!isEndDevice && (dst != localAddress || dst == 0xff)) {
     if (count == AckInd) {
-      Serial.println("ACK MECHANISM." + msg);
-      Serial.println("ACK MECHANISM. Source =  " + String(src) + ", Count = " + msg.charAt(0) + ", acks[src-1][msg.charAt(0)]=" + acks[src - 1][msg.charAt(0)]);
-      if (!acks[src - 1][msg.charAt(0)]) {
-        Serial.println("ACK MECHANISM didn't see this ack");
-        acks[src - 1][msg.charAt(0)] = true;
-        Serial.println("ACK (count = " + String(msg.charAt(0)) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
-        sendMessage(dst, src, AckInd, String(msg.charAt(0)) + " >A" + String(localAddress, HEX));
+      char buf[8];
+      msg.toCharArray(buf, 8);
+      int msgAsInt = atoi(buf);
+      Serial.println("ACKMECHANISM. msg=" + msg + " msg.charAt(0)=" + msg.charAt(0) + " atoi(buf)=" + String(msgAsInt));
+      Serial.println("ACK MECHANISM. Source =  " + String(src, HEX) + ", Count = " + String(msgAsInt) + ", acks[src-1][msg.charAt(0)]=" + acks[src - 1][msgAsInt]);
+      if (!acks[src - 1][msgAsInt]) {
+        Serial.println("didn't see this ack");
+        acks[src - 1][msgAsInt] = true;
+        Serial.println("ACK (count = " + String(msgAsInt) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
+        sendMessage(dst, src, AckInd, msg + " >A" + String(localAddress, HEX));
       } else {
-        Serial.println("Already seen this ACK (" + String(msg.charAt(0)) + "), not forwarding");
+        Serial.println("Already seen this ACK (" + String(msgAsInt) + "), not forwarding");
       }
       return;
     }
@@ -240,7 +243,6 @@ void onReceive(int packetSize) {
 
     //Send Ack
     if (isEndDevice && count != AckInd && dst != 0xff) {
-      //delay(500);
       Serial.println("Sending ACK, count: " + String(count));
       Serial.println("--------------------------------");
       sendMessage(destination, localAddress, AckInd, String(count));
