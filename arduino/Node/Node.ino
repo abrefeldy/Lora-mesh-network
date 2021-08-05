@@ -197,7 +197,6 @@ void onReceive(int packetSize) {
         Serial.println("ACK MECHANISM didn't see this ack");
         acks[src - 1][msg.charAt(0)] = true;
         Serial.println("ACK (count = " + String(msg.charAt(0)) + ", " + String(src, HEX) + "->" + String(dst, HEX) + ")");
-        //delay(random(200, 600)); // So acks won't be send in the same time
         sendMessage(dst, src, AckInd, String(msg.charAt(0)) + " >A" + String(localAddress, HEX));
       } else {
         Serial.println("Already seen this ACK (" + String(msg.charAt(0)) + "), not forwarding");
@@ -241,6 +240,7 @@ void onReceive(int packetSize) {
 
     //Send Ack
     if (isEndDevice && count != AckInd && dst != 0xff) {
+      //delay(500);
       Serial.println("Sending ACK, count: " + String(count));
       Serial.println("--------------------------------");
       sendMessage(destination, localAddress, AckInd, String(count));
